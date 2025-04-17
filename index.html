@@ -2,58 +2,80 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>阿詹國王跳格子</title>
   <style>
-    body { margin: 0; overflow: hidden; font-family: sans-serif; }
-    canvas { display: block; background: #f0f0f0; }
-    #gameOver {
-      position: absolute; top: 40%; width: 100%; text-align: center;
-      font-size: 32px; display: none;
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: linear-gradient(#222, #444);
     }
-    #restartBtn {
-      font-size: 20px; padding: 10px 20px; margin-top: 20px;
+    canvas {
+      display: block;
+    }
+    #title {
+      position: absolute;
+      top: 20px;
+      width: 100%;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: yellow;
+      font-family: sans-serif;
+      text-shadow: 2px 2px 5px black;
+      z-index: 10;
     }
   </style>
 </head>
 <body>
-<canvas id="gameCanvas" width="400" height="600"></canvas>
-<div id="gameOver">
-  <div>阿詹國王掉下去了！</div>
-  <div id="score"></div>
-  <button id="restartBtn" onclick="restartGame()">再戰！</button>
-</div>
+<div id="title">阿詹國王萬歲</div>
+<canvas id="gameCanvas"></canvas>
 <script>
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-let player = { x: 200, y: 500, size: 20, vy: 0, isJumping: false };
-let gravity = 0.8;
-let jumpPower = -12;
+let player = {
+  x: canvas.width / 2,
+  y: canvas.height - 50,
+  w: 40,
+  h: 40,
+  vx: 0,
+  vy: -10,
+  jumping: true
+};
+
 let platforms = [];
-let gameOver = false;
 let score = 0;
+let gravity = 0.5;
+let jumpInterval = 30;
+let frameCount = 0;
 
-function createPlatform(x, y, w = 80, h = 10) {
+function createPlatform(x, y, w, h) {
   return { x, y, w, h };
 }
 
 function initPlatforms() {
   platforms = [];
-  for (let i = 0; i < 5; i++) {
-    platforms.push(createPlatform(100 + Math.random() * 200 - 100, 550 - i * 100));
+  let y = canvas.height - 50;
+  for (let i = 0; i < 10; i++) {
+    platforms.push(createPlatform(Math.random() * (canvas.width - 100), y, 100, 10));
+    y -= 100;
   }
 }
 
 function drawPlayer() {
-  ctx.fillStyle = "black";
-  ctx.beginPath();
-  ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.fillStyle = "#FFD700";
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+  // 頭盔
+  ctx.fillStyle = "#FFA500";
+  ctx.fillRect(player.x, player.y, player.w, 10);
 }
 
 function drawPlatforms() {
-  ctx.fillStyle = "gray";
+  ctx.fillStyle = "#888";
   platforms.forEach(p => {
     ctx.fillRect(p.x, p.y, p.w, p.h);
   });
@@ -62,80 +84,77 @@ function drawPlatforms() {
 function updatePlayer() {
   player.vy += gravity;
   player.y += player.vy;
+  player.x += player.vx;
 
-  platforms.forEach(p => {
+  if (player.x < 0) player.x = 0;
+  if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
+
+  for (let p of platforms) {
     if (
-      player.x > p.x &&
+      player.vy > 0 &&
+      player.x + player.w > p.x &&
       player.x < p.x + p.w &&
-      player.y + player.size >= p.y &&
-      player.y + player.size <= p.y + p.h &&
-      player.vy > 0
+      player.y + player.h > p.y &&
+      player.y + player.h < p.y + p.h
     ) {
-      player.vy = 0;
-      player.y = p.y - player.size;
-      player.isJumping = false;
+      player.vy = -10;
+      score++;
     }
-  });
+  }
 
   if (player.y > canvas.height) {
-    endGame();
+    alert("阿詹國王掉下去了！你跳了 " + score + " 格！");
+    document.location.reload();
   }
 }
 
 function drawScore() {
-  ctx.fillStyle = "black";
-  ctx.font = "16px sans-serif";
-  ctx.fillText("跳了 " + score + " 格", 10, 20);
+  ctx.fillStyle = "white";
+  ctx.font = "18px sans-serif";
+  ctx.fillText("跳了 " + score + " 格", 20, 40);
 }
 
 function gameLoop() {
-  if (gameOver) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  updatePlayer();
   drawPlatforms();
+  updatePlayer();
   drawPlayer();
   drawScore();
+  frameCount++;
+  if (frameCount % jumpInterval === 0) {
+    player.vy = -10;
+  }
   requestAnimationFrame(gameLoop);
 }
 
-function jump() {
-  if (!player.isJumping && !gameOver) {
-    player.vy = jumpPower;
-    player.isJumping = true;
-    score++;
-    movePlatforms();
+function moveLeft() {
+  player.vx = -5;
+}
+
+function moveRight() {
+  player.vx = 5;
+}
+
+function stopMove() {
+  player.vx = 0;
+}
+
+window.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") moveLeft();
+  if (e.key === "ArrowRight") moveRight();
+});
+window.addEventListener("keyup", stopMove);
+
+// 手機觸控控制左右
+canvas.addEventListener("touchstart", function(e) {
+  const x = e.touches[0].clientX;
+  if (x < canvas.width / 2) {
+    moveLeft();
+  } else {
+    moveRight();
   }
-}
-
-function movePlatforms() {
-  platforms.forEach(p => {
-    p.y += 50;
-    if (p.y > canvas.height) {
-      p.y = 0;
-      p.x = Math.random() * (canvas.width - 80);
-    }
-  });
-}
-
-function endGame() {
-  gameOver = true;
-  document.getElementById("gameOver").style.display = "block";
-  document.getElementById("score").innerText = "你跳了 " + score + " 格";
-}
-
-function restartGame() {
-  player.x = 200;
-  player.y = 500;
-  player.vy = 0;
-  player.isJumping = false;
-  score = 0;
-  gameOver = false;
-  document.getElementById("gameOver").style.display = "none";
-  initPlatforms();
-  gameLoop();
-}
-
-canvas.addEventListener("click", jump);
+});
+canvas.addEventListener("touchend", stopMove);
 
 initPlatforms();
 gameLoop();
