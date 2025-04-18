@@ -4,42 +4,15 @@
   <meta charset="UTF-8" />
   <title>阿詹國王跳格子</title>
   <style>
-    html, body {
-      margin: 0;
-      overflow: hidden;
-      font-family: sans-serif;
+    html, body { margin: 0; overflow: hidden; font-family: sans-serif; }
+    canvas { display: block; background: url('assets/sky-bg.png'); background-size: cover; }
+    #gameOver, #count, #title, #restartBtn {
+      position: absolute; width: 100%; text-align: center; color: white;
     }
-    canvas {
-      display: block;
-      background: url('assets/sky-bg.png');
-      background-size: cover;
-    }
-    #gameOver {
-      position: absolute;
-      top: 40%;
-      width: 100%;
-      text-align: center;
-      font-size: 32px;
-      display: none;
-    }
-    #restartBtn {
-      font-size: 20px;
-      padding: 10px 20px;
-      margin-top: 20px;
-    }
-    #count {
-      position: absolute;
-      top: 5px;
-      left: 10px;
-      font-size: 16px;
-      color: white;
-    }
-    #title {
-      text-align: center;
-      font-size: 20px;
-      color: yellow;
-      margin-top: 5px;
-    }
+    #gameOver { top: 40%; font-size: 32px; display: none; }
+    #restartBtn { font-size: 20px; padding: 10px 20px; margin-top: 20px; }
+    #count { top: 5px; left: 10px; font-size: 16px; color: white; }
+    #title { top: 20px; font-size: 20px; color: yellow; }
   </style>
 </head>
 <body>
@@ -52,18 +25,17 @@
     <button id="restartBtn" onclick="restartGame()">重新開始</button>
   </div>
   <audio id="jumpSound" src="assets/jump.mp3"></audio>
-  <audio id="bgm" src="assets/bgm.mp3"></audio>
+  <audio id="bgm" src="assets/bgm.mp3" autoplay loop></audio>
   <audio id="failSound" src="assets/fail.mp3"></audio>
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
     const jumpSound = document.getElementById("jumpSound");
     const failSound = document.getElementById("failSound");
-    const bgm = document.getElementById("bgm");
     const qiaohuImg = new Image();
-    qiaohuImg.src = 'assets/qiaohu.png';
+    qiaohuImg.src = "assets/qiaohu.png";
 
-    let player = { x: 200, y: 500, size: 40, vy: 0 };
+    let player = { x: 200, y: 500, size: 50, vy: 0 };
     let gravity = 0.8;
     let jumpPower = -12;
     let platforms = [];
@@ -78,12 +50,12 @@
     function initPlatforms() {
       platforms = [];
       for (let i = 0; i < 6; i++) {
-        platforms.push(createPlatform(Math.random() * 320, i * 100));
+        platforms.push(createPlatform(Math.random() * 320, 100 * i));
       }
     }
 
     function drawPlatform(p) {
-      ctx.fillStyle = '#aaa';
+      ctx.fillStyle = "#aaa";
       ctx.fillRect(p.x, p.y, p.w, p.h);
     }
 
@@ -107,7 +79,7 @@
         player.y = 250;
         platforms.forEach(p => p.y += diff);
         score += Math.floor(diff / 10);
-        document.getElementById("count").innerText = `跳了 ${score} 格`;
+        document.getElementById("count").textContent = `跳了 ${score} 格`;
       }
 
       platforms.forEach(p => {
@@ -124,9 +96,9 @@
 
       if (player.y > canvas.height) {
         gameOver = true;
-        failSound.play();
         document.getElementById("gameOver").style.display = "block";
-        document.getElementById("score").innerText = `你總共跳了 ${score} 格`;
+        document.getElementById("score").textContent = `總共跳了 ${score} 格`;
+        failSound.play();
       }
 
       if (keys["ArrowLeft"]) player.x -= 5;
@@ -148,21 +120,19 @@
     }
 
     function restartGame() {
-      player = { x: 200, y: 500, size: 40, vy: 0 };
+      player = { x: 200, y: 500, size: 50, vy: 0 };
       score = 0;
-      document.getElementById("count").innerText = "跳了 0 格";
+      document.getElementById("count").textContent = "跳了 0 格";
       document.getElementById("gameOver").style.display = "none";
       gameOver = false;
       initPlatforms();
     }
 
-    window.addEventListener('keydown', e => keys[e.key] = true);
-    window.addEventListener('keyup', e => keys[e.key] = false);
+    window.addEventListener("keydown", e => keys[e.key] = true);
+    window.addEventListener("keyup", e => keys[e.key] = false);
 
-    bgm.loop = true;
-    bgm.play();
     initPlatforms();
-    jump();  // 開始自動跳
+    jump(); // 自動跳
     gameLoop();
   </script>
 </body>
