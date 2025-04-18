@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>阿詹國王跳格子</title>
+  <style>
+    html, body {
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    canvas {
+      display: block;
+      background: url('assets/sky-bg.png');
+      background-size: cover;
+    }
+    #gameOver {
+      position: absolute;
+      top: 40%;
+      width: 100%;
+      text-align: center;
+      font-size: 32px;
+      display: none;
+    }
+    #restartBtn {
+      font-size: 20px;
+      padding: 10px 20px;
+      margin-top: 20px;
+    }
+    #count {
+      position: absolute;
+      top: 5px;
+      left: 10px;
+      font-size: 16px;
+      color: white;
+    }
+    #title {
+      text-align: center;
+      color: yellow;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <div id="title">阿詹國王萬歲</div>
+  <div id="count">跳了 0 格</div>
+  <div id="gameOver">
+    <div>阿詹國王掉下去了！</div>
+    <div id="score"></div>
+    <button id="restartBtn" onclick="restartGame()">重新開始</button>
+  </div>
+  <audio id="jumpSound" src="assets/jump.mp3"></audio>
+  <audio id="bgm" src="assets/bgm.mp3" autoplay loop></audio>
+  <audio id="failSound" src="assets/fail.mp3"></audio>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const jumpSound = document.getElementById("jumpSound");
+    const failSound = document.getElementById("failSound");
+    const qiaohuImg = new Image();
+    qiaohuImg.src = "assets/qiaohu.png";
+
+    let player = { x: 200, y: 500, size: 40, vy: 0 };
+    let gravity = 0.8;
+    let jumpPower = -12;
+    let platforms = [];
+    let gameOver = false;
+    let score = 0;
+    let keys = {};
+
+    function createPlatform(x, y, w = 60, h = 10) {
+      return { x, y, w, h };
+    }
+
+    function initPlatforms() {
+      platforms = [];
+      for (let i = 0; i < 10; i++) {
+        platforms.push(createPlatform(Math.random() * 340, 600 - i * 60));
+      }
+    }
+
+    function drawPlatform(p) {
+      ctx.fillStyle = "#aaa";
+      ctx.fillRect(p.x, p.y, p.w, p.h);
+    }
+
+    function drawPlayer() {
+      ctx.drawImage(qiaohuImg, player.x, player.y, player.size, player.size);
+    }
+
+    function jump() {
+      player.vy = jumpPower;
+      jumpSound.currentTime = 0;
+      jumpSound.play();
+    }
+
+    function update() {
+      if (gameOver) return;
+
+      player.vy += gravity;
+      player.y += player.vy;
+
+      if (player.y < 250) {
+        let diff = 250 - player.y;
+        player.y = 250;
+        platforms.forEach(p => p.y += diff);
+        score += Math.floor(diff / 10);
+        document.getElementById("count").innerText = `跳了 ${score} 格`;
+      }
+
+      platforms.forEach(p => {
+        if (
+          player.vy > 0 &&
+          player.x + player.size > p.x &&
+          player.x < p.x + p.w &&
+          player.y + player.size > p.y &&
+          player.y + player.size < p.y + p.h
+        ) {
+          jump();
+        }
+      });
+
+      if (player.y > 600) {
+        gameOver = true;
+        failSound.play();
+        document.getElementById("gameOver").style.display = "block";
+        document.getElementById("score").innerText = `你跳了 ${score} 格`;
+      }
+
+      if (keys["ArrowLeft"]) player.x -= 5;
+      if (keys["ArrowRight"]) player.x += 5;
+      if (player.x < 0) player.x = 0;
+      if (player.x + player.size > canvas.width) player.x = canvas.width - player.size;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPlayer();
+      platforms.forEach(drawPlatform);
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function restartGame() {
+      player = { x: 200, y: 500, size: 40, vy: 0 };
+      score = 0;
+      document.getElementById("count").innerText = `跳了 0 格`;
+      document.getElementById("gameOver").style.display = "none";
+      gameOver = false;
+      initPlatforms();
+    }
+
+    window.addEventListener("keydown", e => keys[e.key] = true);
+    window.addEventListener("keyup", e => keys[e.key] = false);
+
+    initPlatforms();
+    jump();
+    gameLoop();
+  </script>
+</body>
+</html>
