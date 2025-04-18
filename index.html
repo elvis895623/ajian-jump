@@ -20,7 +20,6 @@
       width: 100%;
       text-align: center;
       font-size: 32px;
-      color: red;
       display: none;
     }
     #restartBtn {
@@ -36,12 +35,10 @@
       color: white;
     }
     #title {
-      position: absolute;
-      top: 5px;
-      width: 100%;
       text-align: center;
-      font-size: 18px;
+      font-size: 20px;
       color: yellow;
+      margin-top: 5px;
     }
   </style>
 </head>
@@ -52,22 +49,19 @@
   <div id="gameOver">
     <div>阿詹國王掉下去了！</div>
     <div id="score"></div>
-    <button id="restartBtn" onclick="restartGame()">再戰！</button>
+    <button id="restartBtn" onclick="restartGame()">重新開始</button>
   </div>
   <audio id="jumpSound" src="assets/jump.mp3"></audio>
-  <audio id="bgm" src="assets/bgm.mp3" autoplay loop></audio>
+  <audio id="bgm" src="assets/bgm.mp3"></audio>
   <audio id="failSound" src="assets/fail.mp3"></audio>
-
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-
     const jumpSound = document.getElementById("jumpSound");
     const failSound = document.getElementById("failSound");
     const bgm = document.getElementById("bgm");
-
     const qiaohuImg = new Image();
-    qiaohuImg.src = "assets/qiaohu.png";
+    qiaohuImg.src = 'assets/qiaohu.png';
 
     let player = { x: 200, y: 500, size: 40, vy: 0 };
     let gravity = 0.8;
@@ -83,16 +77,13 @@
 
     function initPlatforms() {
       platforms = [];
-      for (let i = 0; i < 10; i++) {
-        platforms.push(createPlatform(
-          Math.random() * 320 + 20,
-          600 - i * 60
-        ));
+      for (let i = 0; i < 6; i++) {
+        platforms.push(createPlatform(Math.random() * 320, i * 100));
       }
     }
 
     function drawPlatform(p) {
-      ctx.fillStyle = "#aaa";
+      ctx.fillStyle = '#aaa';
       ctx.fillRect(p.x, p.y, p.w, p.h);
     }
 
@@ -108,7 +99,6 @@
 
     function update() {
       if (gameOver) return;
-
       player.vy += gravity;
       player.y += player.vy;
 
@@ -117,7 +107,7 @@
         player.y = 250;
         platforms.forEach(p => p.y += diff);
         score += Math.floor(diff / 10);
-        document.getElementById("count").textContent = `跳了 ${score} 格`;
+        document.getElementById("count").innerText = `跳了 ${score} 格`;
       }
 
       platforms.forEach(p => {
@@ -125,24 +115,24 @@
           player.vy > 0 &&
           player.x + player.size > p.x &&
           player.x < p.x + p.w &&
-          player.y + player.size < p.y + p.h &&
-          player.y + player.size > p.y
+          player.y + player.size > p.y &&
+          player.y + player.size < p.y + p.h
         ) {
           jump();
         }
       });
 
-      if (player.y > 600) {
+      if (player.y > canvas.height) {
         gameOver = true;
         failSound.play();
         document.getElementById("gameOver").style.display = "block";
-        document.getElementById("score").textContent = `你總共跳了 ${score} 格`;
+        document.getElementById("score").innerText = `你總共跳了 ${score} 格`;
       }
 
       if (keys["ArrowLeft"]) player.x -= 5;
       if (keys["ArrowRight"]) player.x += 5;
       if (player.x < 0) player.x = 0;
-      if (player.x + player.size > 400) player.x = 400 - player.size;
+      if (player.x + player.size > canvas.width) player.x = canvas.width - player.size;
     }
 
     function draw() {
@@ -160,17 +150,19 @@
     function restartGame() {
       player = { x: 200, y: 500, size: 40, vy: 0 };
       score = 0;
-      document.getElementById("count").textContent = "跳了 0 格";
+      document.getElementById("count").innerText = "跳了 0 格";
       document.getElementById("gameOver").style.display = "none";
       gameOver = false;
       initPlatforms();
     }
 
-    window.addEventListener("keydown", e => keys[e.key] = true);
-    window.addEventListener("keyup", e => keys[e.key] = false);
+    window.addEventListener('keydown', e => keys[e.key] = true);
+    window.addEventListener('keyup', e => keys[e.key] = false);
 
+    bgm.loop = true;
+    bgm.play();
     initPlatforms();
-    jump(); // 一開始自動跳
+    jump();  // 開始自動跳
     gameLoop();
   </script>
 </body>
